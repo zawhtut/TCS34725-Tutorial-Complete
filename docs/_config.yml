@@ -1,4 +1,18 @@
-title: TCS34725 Linux I²C Tutorial
-description: Standalone Raspberry Pi TCS34725 tutorial in C (no BCM2835 required)
-theme: jekyll-theme-cayman
-markdown: kramdown
+title: TCS34725 Tutorial
+description: Raspberry Pi, Linux I2C and C Programming
+
+remote_theme: just-the-docs/just-the-docs
+
+plugins:
+  - jekyll-remote-theme
+
+url: "https://zawhtut.github.io"
+baseurl: "/TCS34725-Tutorial-Complete"
+
+nav_enabled: true
+search_enabled: true
+color_scheme: light
+
+aux_links:
+  "View on GitHub":
+    - "https://github.com/zawhtut/TCS34725-Tutorial-Complete"

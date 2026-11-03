@@ -1,6 +1,7 @@
 ---
 layout: default
-title: Enable Linux I²C
+title: Enable I²C
+nav_order: 3
 ---
 # Enable I²C on Raspberry Pi
 

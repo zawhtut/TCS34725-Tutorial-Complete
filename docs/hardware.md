@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Hardware Setup
+nav_order: 2
 ---
 # Hardware connections
 
