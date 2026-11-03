@@ -1,6 +1,8 @@
 ---
 layout: default
 title: GitHub Pages Setup
+nav_exclude: true
+search_exclude: true
 ---
 # Publish this separate tutorial with GitHub Pages
 
