@@ -1,0 +1,4 @@
+title: TCS34725 Linux I²C Tutorial
+description: Standalone Raspberry Pi TCS34725 tutorial in C (no BCM2835 required)
+theme: jekyll-theme-cayman
+markdown: kramdown
