@@ -16,6 +16,8 @@ C example / team sensor driver
         -> TCS34725 address 0x29
 ```
 
-**Use GPIO only if you add an extra feature** such as a separately controlled LED or interrupt line. Such optional functionality requires its own electrical and software design, and is **not necessary** for the tutorial's RGBC polling code.
+**Use GPIO only for an optional extra feature**, such as monitoring the sensor's **active-low INT output** or controlling a separate LED. Even with INT, sensor configuration and measurements still use I²C. To monitor the INT line you can use Linux GPIO tools or `libgpiod`; the latter needs `-lgpiod` only if your C program actually calls its API. This functionality is **not necessary** for the tutorial's RGBC polling code.
+
+See [Optional hardware interrupts](interrupts.html) for wiring, thresholds, monitoring, and build requirements.
 
 Next: [Registers](registers.html).

@@ -41,6 +41,7 @@ If your bus is not `/dev/i2c-1`, substitute the appropriate device. The examples
 - [I²C versus GPIO](docs/gpio-vs-i2c.md)
 - [Sensor registers and Linux I²C operations](docs/registers.md)
 - [Read RGBC values](docs/rgbc-acquisition.md)
+- [Optional hardware interrupts / INT pin](docs/interrupts.md)
 - [Compile and run C examples](docs/compilation.md)
 - [Processing, calibration and classification](docs/processing.md)
 - [Using the team's library later](docs/library-usage.md)

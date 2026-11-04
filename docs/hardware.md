@@ -1,7 +1,6 @@
 ---
 layout: default
 title: Hardware Setup
-nav_order: 2
 ---
 # Hardware connections
 
@@ -18,7 +17,7 @@ On a Raspberry Pi Zero 2 W's standard 40-pin header:
 
 Use a common ground. **Never drive the Pi SDA/SCL lines at 5 V**. Boards that accept 5 V power are not automatically safe for 5 V I²C signaling; verify onboard level shifting. If unsure, choose a verified 3.3 V-compatible breakout and supply it per its documentation.
 
-`INT` is optional for our polling examples. Any onboard illumination LED control is breakout-specific; leave extra pins disconnected unless needed.
+`INT` is optional for our polling examples. If you want an advanced interrupt exercise, see [Optional hardware interrupts](interrupts.html) for an example connection to physical pin 11 (GPIO17), 3.3 V signal requirements, and threshold setup. Do not connect INT without verifying your breakout exposes a compatible signal. Any onboard illumination LED control is breakout-specific; leave extra pins disconnected unless needed.
 
 ## Checklist
 

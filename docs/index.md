@@ -1,7 +1,6 @@
 ---
 layout: default
-title: Home
-nav_order: 1
+title: Tutorial Home
 ---
 # TCS34725 + Raspberry Pi: Linux I²C in C
 
@@ -14,10 +13,11 @@ Welcome. This site is a standalone companion to the RGB Sensor team assignment. 
 3. [GPIO versus I²C](gpio-vs-i2c.html) — why no GPIO library is needed.
 4. [Registers & I²C transactions](registers.html) — protocol and `I2C_RDWR`.
 5. [Acquiring RGBC data](rgbc-acquisition.html) — gain, time, bytes and freshness.
-6. [Compilation](compilation.html) — build and run the examples.
-7. [Processing and calibration](processing.html) — validating and classifying measurements.
-8. [Library reuse](library-usage.html) — integrate the final team library without copying its internals.
-9. [Troubleshooting](troubleshooting.html) and [References](references.html).
+6. [Optional hardware interrupts](interrupts.html) — configure Clear thresholds and monitor INT using GPIO (advanced; not needed for polling).
+7. [Compilation](compilation.html) — build and run the examples.
+8. [Processing and calibration](processing.html) — validating and classifying measurements.
+9. [Library reuse](library-usage.html) — integrate the final team library without copying its internals.
+10. [Troubleshooting](troubleshooting.html) and [References](references.html).
 
 ## On the Pi (after wiring and enabling I²C)
 
