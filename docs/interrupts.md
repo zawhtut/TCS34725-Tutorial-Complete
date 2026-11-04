@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Hardware Interrupts (Optional)
-nav_order: 7
+nav_order: 10
 ---
 
 # Optional TCS34725 hardware interrupts (INT pin)

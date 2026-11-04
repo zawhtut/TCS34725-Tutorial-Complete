@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Compilation
+nav_order: 8
 ---
 # Compile and run the examples
 

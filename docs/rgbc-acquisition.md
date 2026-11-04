@@ -1,6 +1,7 @@
 ---
 layout: default
 title: RGBC Acquisition
+nav_order: 6
 ---
 # Reading raw RGBC measurements
 

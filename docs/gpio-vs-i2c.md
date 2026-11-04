@@ -1,6 +1,7 @@
 ---
 layout: default
 title: GPIO vs I²C
+nav_order: 4
 ---
 # Why we still use I²C but not a GPIO library
 

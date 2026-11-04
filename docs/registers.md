@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Registers and Transactions
+nav_order: 5
 ---
 # Registers and Linux I²C transactions
 

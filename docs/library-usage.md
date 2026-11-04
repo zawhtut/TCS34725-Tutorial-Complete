@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Library Reuse
+nav_order: 9
 ---
 # Using the team's library later (required Use section)
 

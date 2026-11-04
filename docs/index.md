@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Tutorial Home
+nav_order: 1
 ---
 # TCS34725 + Raspberry Pi: Linux I²C in C
 

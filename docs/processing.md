@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Processing and Calibration
+nav_order: 7
 ---
 # Processing, calibration, and classification
 
