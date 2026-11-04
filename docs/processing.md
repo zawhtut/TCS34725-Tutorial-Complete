@@ -1,42 +1,66 @@
 ---
 layout: default
-title: Processing and Calibration
-nav_order: 7
+title: "8-bit RGB and Hex"
+nav_order: 10
 ---
-# Processing, calibration, and classification
 
-This page maps to Members 3 and 4; it is **separate from direct I²C access**.
+# Convert Raw RGB to 8-bit RGB and Hex
 
-## Measurement quality
+**Goal:** Start with raw counts and print familiar RGB values from 0–255. We are not claiming that these are calibrated display colors.
 
-- Reject null input and Clear = 0.
-- Flag Clear below a configurable threshold as low-light.
-- Estimate digital saturation using integration time: `min(65535, cycles * 1024)` with `cycles = 256 - ATIME`.
-- High gain/bright illumination may cause earlier analog saturation; evaluate hardware data.
+We will use a simple learning method: find the largest of Red, Green and Blue; scale it to 255; scale the others proportionally.
 
-## Normalize
-
-For a simple instructional baseline, compute channel ratios with floating point:
+## Add this underneath the raw reading in `TCS_main.c`
 
 ```c
-float rn = (float)raw.red   / raw.clear;
-float gn = (float)raw.green / raw.clear;
-float bn = (float)raw.blue  / raw.clear;
+unsigned int maximum = red;
+
+if (green > maximum) {
+    maximum = green;
+}
+
+if (blue > maximum) {
+    maximum = blue;
+}
+
+unsigned int red_8 = 0;
+unsigned int green_8 = 0;
+unsigned int blue_8 = 0;
+
+if (maximum > 0) {
+    red_8   = red * 255 / maximum;
+    green_8 = green * 255 / maximum;
+    blue_8  = blue * 255 / maximum;
+}
+
+printf("8-bit RGB: R=%u G=%u B=%u\n", red_8, green_8, blue_8);
+printf("RGB Hex: #%02X%02X%02X\n", red_8, green_8, blue_8);
 ```
 
-Then apply separately tuned scaling constants and clamp into `[0,255]`. **Do not assume those values are calibrated sRGB**. The processing tests include a sample baseline to show numeric behavior, not to claim colorimetric accuracy.
+These lines belong **inside the `for` loop, after** we calculate `red`, `green`, and `blue`.
 
-## Reference classification
+## Understand the calculation
 
-Use squared Euclidean RGB distance to choose the closest reference:
+If the raw values are `R=644`, `G=1004`, and `B=392`, the largest value is `1004`.
 
 ```text
-distance = (r-R)^2 + (g-G)^2 + (b-B)^2
-confidence = 100 * (1 - distance / (3*255*255))
+Red   = 644 * 255 / 1004 = 163
+Green = 1004 * 255 / 1004 = 255
+Blue  = 392 * 255 / 1004 = 99
 ```
 
-Use signed differences; confidence is a **similarity score**, not a statistical probability. Reference arrays should be tuned against measured data; bright/dark shade classification may require preserving additional brightness information rather than only ratios.
+The result is approximately `RGB(163, 255, 99)` or `#A3FF63`.
 
-## Test without the Pi
+## What does `%02X` mean?
 
-`make -C examples check` runs `examples/test_processing.c`, which tests Clear-zero rejection, normalized range, a simple exact-reference match, and similarity score bounds. It is **not** the team's finished color library.
+- `%X` prints a number in hexadecimal using uppercase letters.
+- `2` gives at least two character positions.
+- `0` fills an unused leading position with zero.
+
+So `10` prints as `0A`, and `255` prints as `FF`. Three two-digit values give `#RRGGBB`.
+
+## Is this accurate sRGB?
+
+**No.** This approach throws away absolute brightness and does not correct the sensor's spectral response. It is useful for seeing color proportions while learning. A dark and a bright object can produce similar hex output. More reliable color output requires testing and [calibration](calibration.html).
+
+Next: [Color Names](color-names.html).

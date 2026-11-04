@@ -1,73 +1,53 @@
 ---
 layout: default
-title: Compilation
-nav_order: 8
+title: "Compile and Run"
+nav_order: 14
 ---
-# Compile and run the examples
 
-From the repository root on Raspberry Pi Linux:
+# Compile and Run C Programs
 
-```bash
-sudo apt install -y build-essential libi2c-dev i2c-tools
-make -C examples
-```
+**Goal:** Compile `TCS_main.c` on the Raspberry Pi without introducing a build system yet.
 
-The examples compile with GCC, warnings enabled, and ISO C11. **No `-lbcm2835` or extra I²C linker library is needed.** The examples use Linux kernel interfaces, not a third-party hardware library.
+## Simplest GCC command
 
-## Optional INT-pin compilation requirements
-
-The normal polling examples do **not** access general-purpose GPIO and do not link `-lgpiod`.
-
-| Feature | Extra library at link time? |
-| --- | --- |
-| Existing sensor-ID and RGBC polling programs | No `-lgpiod`, `-lbcm2835`, or `-li2c` |
-| Configure TCS34725 interrupt registers over `i2c-dev` | No `-lgpiod` |
-| Observe interrupt edges with the `gpiomon` command | No C linking; install the `gpiod` utilities |
-| Write your own C program using `libgpiod` | Install `libgpiod-dev` and link against `libgpiod` |
-
-For the optional C GPIO interface, check your installed version and flags:
+From the folder containing the file:
 
 ```bash
-sudo apt install -y gpiod libgpiod-dev pkg-config
-pkg-config --modversion libgpiod
-pkg-config --cflags --libs libgpiod
+gcc TCS_main.c -o TCS_main
+./TCS_main
 ```
 
-`libgpiod` 1.x and 2.x have different C APIs. The original `examples/Makefile` is still correct for polling and needs no changes. See [Optional hardware interrupts](interrupts.html).
+- `gcc` is the C compiler.
+- `TCS_main.c` is the source file.
+- `-o TCS_main` gives the executable a name.
+- `./TCS_main` runs the executable in the current directory.
 
-## Hardware checks
+If you want compiler warnings while learning:
 
 ```bash
-./examples/test_sensor_id /dev/i2c-1
-./examples/read_rgbc /dev/i2c-1 5
+gcc -Wall -Wextra TCS_main.c -o TCS_main
 ```
 
-## Offline test (sensor not needed)
+`-Wall` and `-Wextra` show warnings about possible mistakes. They are optional for the first build.
 
-```bash
-make -C examples check
+## Do we need `-lgpiod`, `-li2c`, or `-lbcm2835`?
+
+**No** for the basic example. We use Linux system functions (`open()`, `ioctl()`, `write()`, `read()`, `close()`) directly.
+
+The optional INT-pin lesson can use a GPIO library such as `libgpiod`, which is a *separate* feature.
+
+## What about `usleep()`?
+
+```c
+#include <unistd.h>
+
+usleep(700000);  /* 700,000 microseconds = 700 milliseconds */
 ```
 
-This validates sample processing logic and deterministic reference matching; it does **not** establish real sensor accuracy.
+`usleep()` is a convenient, older POSIX function available in typical Raspberry Pi GCC environments. If a strict C mode reports an undeclared function, compile with the ordinary `gcc` command above or use the modern `nanosleep()` API after learning how its `timespec` structure works. We don't need to introduce that structure in the first program.
 
-## Clean build outputs
+## The older `examples/` folder
 
-```bash
-make -C examples clean
-```
+The repository may still contain `examples/read_rgbc.c` and `tcs_i2c.c` from an earlier tutorial version. They are separate learning samples. The simplest path now is **the standalone `TCS_main.c` on [Read Raw RGBC](rgbc-acquisition.html)**.
 
-## Expected output (illustrative only)
-
-```text
-I2C device: /dev/i2c-1
-I2C address: 0x29
-Device ID: 0x44 (TCS34721/25 family)
-```
-
-```text
-Sample 1: C=1234 R=440 G=650 B=210
-```
-
-Actual readings vary with illumination, distance, gain, and integration time. The command-line applications return a nonzero exit code on I²C failures.
-
-Next: [Troubleshooting](troubleshooting.html).
+When the group has working basic code, we can introduce the project's shared Makefile.

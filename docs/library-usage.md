@@ -1,35 +1,64 @@
 ---
 layout: default
-title: Library Reuse
-nav_order: 9
+title: "Build a Reusable Library"
+nav_order: 15
 ---
-# Using the team's library later (required Use section)
 
-The team's main repository will eventually provide public headers and these functions. **Their exact C signatures have not yet been agreed**, so the sequence below is **pseudocode**, not a drop-in compilable application.
+# Move the Working Code into a Reusable Library
+
+**Goal:** After the one-file program works, let another C project use the sensor without copying all the low-level I²C steps.
+
+Do **not** begin with a large library. First confirm `TCS_main.c` reads the sensor.
+
+## Step 1: Identify the repeated jobs
+
+Our one-file program already performs these actions:
+
+1. Open I²C and select address `0x29`.
+2. Turn on the sensor.
+3. Read the raw four channels.
+4. Turn off the sensor and close the connection.
+
+Those are good candidates to become functions because **another program will need them too**.
+
+## Step 2: Small file layout
 
 ```text
-Sensor_Init() -> Sensor_SetGain() / Sensor_SetIntegrationTime()
-  -> Sensor_ReadRaw(&raw)
-  -> RGB_Validate(&raw)
-  -> RGB_Normalize(&raw, &color)
-  -> RGB_DetectColor(&color)
-  -> display results in the caller
-  -> Sensor_Close()
+RGB_Sensor_Project/
+  main.c
+  RGB_Library/
+    rgb_sensor.h
+    rgb_sensor.c
 ```
 
-## Interface review before code integration
+`rgb_sensor.h` tells other files which functions are available. `rgb_sensor.c` contains the actual function code. `main.c` calls them.
 
-1. Agree on `RGB_Raw` fields: `uint16_t red, green, blue, clear`.
-2. Agree on `RGB_Color`: `uint8_t red, green, blue; const char *name; float confidence`.
-3. Agree on status codes for success, failure, low-light, saturation, and not-ready.
-4. Agree on how current ATIME/integration time reaches Member 3 without coupling `color_detection.c` to hardware.
-5. Agree on whether calibration defaults are compile-time constants or a public setter.
-6. Agree on the I²C bus device path (typically `/dev/i2c-1`) and whether it is configurable.
-7. Agree on ownership: M1 registers/configuration, M2 acquisition, M3 processing, M4 classification, M5 application.
-8. Test with a second small C application that includes the library headers and calls **public** functions only. No copying of private register helpers.
+For example, the header could eventually declare:
 
-## Build notes
+```c
+#ifndef RGB_SENSOR_H
+#define RGB_SENSOR_H
 
-A simple project can compile `main.c`, `RGB_Library/rgb_sensor.c`, and `RGB_Library/color_detection.c` with GCC. No `-lbcm2835` is needed when using `i2c-dev`. Your app requires permission to access `/dev/i2c-*`. Exact Makefile options depend on the team's final source code.
+int Sensor_Init(void);
+int Sensor_ReadRGB(unsigned int *red,
+                   unsigned int *green,
+                   unsigned int *blue,
+                   unsigned int *clear);
+void Sensor_Close(void);
 
-This tutorial's `examples/tcs_i2c.*` is instructional and should **not** be pasted into the team's main repo or treated as its official library API.
+#endif
+```
+
+### Why does `*red` appear here?
+
+A function can return only one value directly with `return`. Using **pointers** lets a function fill several variables supplied by its caller. The `*` means the parameter is a pointer; the caller will pass an address such as `&red`. We introduce this only when splitting the working program into functions.
+
+## Step 3: Add processing *after* reading works
+
+Later, a separate `color_detection.c` can convert raw readings into 8-bit RGB, approximate names and similarity scores. The main program should not need to know sensor register addresses.
+
+## Step 4: Test reusability
+
+Make a second small `main.c` that calls the public functions. If it works without copying register commands, the library is reusable.
+
+The team assignment also requires a **Use section**. Explain headers, function parameters, return values, how to compile, and a short example of calling the library. Keep explanations next to the code when possible.

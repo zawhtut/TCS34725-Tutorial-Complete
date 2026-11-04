@@ -1,41 +1,128 @@
 ---
 layout: default
-title: RGBC Acquisition
-nav_order: 6
+title: "Read Raw RGBC"
+nav_order: 8
 ---
-# Reading raw RGBC measurements
 
-1. Open the I²C device and set slave address `0x29`.
-2. Read the device ID and check against your hardware variant.
-3. Write `ATIME` for the desired integration period (for example `0xEB` = 50.4 ms).
-4. Write `CONTROL` to choose gain (for example `0x01` = 4x).
-5. Write ENABLE `0x01` to power on; wait at least about 2.4 ms for oscillator startup.
-6. Write ENABLE `0x03` to enable RGBC conversion.
-7. Wait for an integration cycle, then poll STATUS `AVALID` bit 0.
-8. Burst read eight bytes from register `0x14`, using command `0xB4`.
-9. Combine 16-bit little-endian channel values:
+# Read Raw RGBC: Complete Beginner Program
+
+**Goal:** Connect to the sensor, start measurements, read four raw channels, and close the device. Everything is in one `main()` function. **No custom functions or custom structures.**
+
+Create a file named **`TCS_main.c`** in a separate practice folder:
 
 ```c
-clear = (uint16_t)data[0] | ((uint16_t)data[1] << 8);
-red   = (uint16_t)data[2] | ((uint16_t)data[3] << 8);
-green = (uint16_t)data[4] | ((uint16_t)data[5] << 8);
-blue  = (uint16_t)data[6] | ((uint16_t)data[7] << 8);
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/i2c-dev.h>
+
+int main(void)
+{
+    int fd;
+    unsigned char enable[2];
+    unsigned char command;
+    unsigned char data[8];
+    unsigned int red, green, blue, clear;
+
+    /* Open I2C bus 1 on the Raspberry Pi. */
+    fd = open("/dev/i2c-1", O_RDWR);
+    if (fd < 0) {
+        perror("Cannot open I2C");
+        return 1;
+    }
+
+    /* Choose address 0x29, used by the TCS34725. */
+    if (ioctl(fd, I2C_SLAVE, 0x29) < 0) {
+        perror("Cannot select sensor");
+        close(fd);
+        return 1;
+    }
+
+    /* Write 0x01 to register 0x00 to turn on sensor power. */
+    enable[0] = 0x80;  /* Command for register 0x00 (ENABLE) */
+    enable[1] = 0x01;  /* PON = 1 */
+    if (write(fd, enable, 2) != 2) {
+        perror("Cannot power on sensor");
+        close(fd);
+        return 1;
+    }
+
+    usleep(3000);      /* Wait 3 milliseconds for oscillator startup. */
+
+    /* Enable the RGBC measurement circuit as well as power. */
+    enable[1] = 0x03;  /* PON = 1 and AEN = 1 */
+    if (write(fd, enable, 2) != 2) {
+        perror("Cannot enable RGBC");
+        close(fd);
+        return 1;
+    }
+
+    printf("Reading TCS34725...\n\n");
+
+    for (int i = 0; i < 5; i++) {
+        /* Allow enough time for a measurement. */
+        usleep(700000);
+
+        /* Start at register 0x14 and read consecutive registers. */
+        command = 0xB4;
+        if (write(fd, &command, 1) != 1) {
+            perror("Cannot select RGBC registers");
+            break;
+        }
+
+        /* Get eight bytes: two each for C, R, G, and B. */
+        if (read(fd, data, 8) != 8) {
+            perror("Cannot read RGBC bytes");
+            break;
+        }
+
+        /* First byte is low; second byte is high (256 times bigger). */
+        clear = data[0] + data[1] * 256;
+        red   = data[2] + data[3] * 256;
+        green = data[4] + data[5] * 256;
+        blue  = data[6] + data[7] * 256;
+
+        printf("Sample %d: R=%u G=%u B=%u C=%u\n",
+               i + 1, red, green, blue, clear);
+    }
+
+    /* Switch the sensor off, then close our Linux I2C connection. */
+    enable[1] = 0x00;
+    write(fd, enable, 2);
+    close(fd);
+
+    printf("Sensor closed.\n");
+    return 0;
+}
 ```
 
-10. On exit, write ENABLE `0x00` where possible, then close the file descriptor.
-
-## Compile and try
+## Compile and run
 
 ```bash
-make -C examples
-./examples/test_sensor_id /dev/i2c-1
-./examples/read_rgbc /dev/i2c-1 5
+gcc TCS_main.c -o TCS_main
+./TCS_main
 ```
 
-The second argument is the number of measurements (default 5). The program delays between samples and times out if STATUS never becomes valid.
+Example of **raw** output (your measurements will differ):
 
-## Saturation and freshness
+```text
+Sample 1: R=644 G=1004 B=392 C=2085
+```
 
-A useful **digital** upper-count estimate is `min(65535, (256 - ATIME) * 1024)`. Analog saturation can occur earlier at high gain or bright light, so observe and tune actual readings. Clear = 0 prevents dividing by Clear. `AVALID` means a measurement finished, **not** that a repeated read is necessarily a new integration result. Coordinate sample timing with the chosen integration period.
+## Why `&command` in `write()`?
 
-Next: [Processing](processing.html) or [Compilation](compilation.html).
+`command` stores one byte. `&command` is its **memory address**. The `write()` function needs an address so it knows where the byte is stored. `write(fd, &command, 1)` sends **one byte** from that address.
+
+## Why `data[8]`?
+
+There are four channels, and each channel uses **two bytes**. Four times two equals eight.
+
+## What this example intentionally leaves out
+
+- It doesn't check the sensor ID or the STATUS `AVALID` bit. The long wait is only a simple first demonstration, and a returned sample may not necessarily be fresh.
+- It doesn't configure gain or integration time. Those can be introduced later once basic communication works.
+- It does not use the optional interrupt pin.
+- It doesn't calculate true sRGB yet.
+
+For a more reliable driver, add sensor ID checks, data-ready checks, and more complete error handling when we [build a library](library-usage.html). Next, learn what [Clear](clear-channel.html) means.

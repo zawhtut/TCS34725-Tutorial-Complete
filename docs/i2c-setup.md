@@ -1,60 +1,64 @@
 ---
 layout: default
-title: Enable I²C
+title: "Enable I²C"
 nav_order: 3
 ---
-# Enable I²C on Raspberry Pi
 
-These instructions target Raspberry Pi OS or another Debian-based Linux image with the standard Pi I²C controller. System menus and configuration paths may vary.
+# Enable I²C
 
-## 1. Install compiler, development headers and diagnostic utility
+**Goal:** Confirm that Linux has an I²C bus and that the sensor answers at its address.
+
+## 1. Install the tools
 
 ```bash
 sudo apt update
-sudo apt install -y build-essential i2c-tools libi2c-dev
+sudo apt install -y i2c-tools build-essential
 ```
 
-## 2. Enable I²C
+- `i2c-tools` provides `i2cdetect` for checking the bus.
+- `build-essential` provides GCC and related build tools.
+- `libi2c-dev` is **not required** for our direct `open()`, `ioctl()`, `write()`, and `read()` example.
 
-On Raspberry Pi OS with `raspi-config` available:
+## 2. Enable I²C if necessary
+
+On Raspberry Pi OS, you can usually run:
 
 ```bash
 sudo raspi-config
 ```
 
-Select **Interface Options → I2C → Enable**, then reboot if prompted. On other Debian-based images, use the image's documented device-tree/I²C method instead.
+Choose **Interface Options → I2C → Enable**. On other Debian-based installations, I²C configuration may be different.
 
-## 3. Check the Linux device
+## 3. Find the bus
 
 ```bash
-ls -l /dev/i2c-*
+ls /dev/i2c-*
 ```
 
-Typically you will use `/dev/i2c-1`, but **verify** the bus on your board/image.
+On our typical Pi setup, `/dev/i2c-1` is used. Seeing `/dev/i2c-2` as well is not a problem.
 
-## 4. Detect the sensor
+## 4. Check address `0x29`
 
 ```bash
-i2cdetect -y 1
+sudo i2cdetect -y 1
 ```
 
-On bus 1 a working TCS34725 normally responds at hexadecimal address **`29`**. `UU` means the address is in use by a kernel driver. A scan can have side effects on some connected devices; avoid scanning a shared production bus.
+Look for `29` in the grid. That means a device acknowledged address `0x29` on **bus 1**. It does not prove the device is a TCS34725 yet.
 
-## 5. Permission errors
+If `29` is missing, check wiring, power and which bus your pins are using. Don't scan random buses without knowing what is attached; scanning can interfere with some devices.
 
-Inspect the device permissions:
+## 5. Permissions
+
+If your C program later shows `Permission denied`, test whether your user belongs to the `i2c` group:
 
 ```bash
-ls -l /dev/i2c-1
 groups
 ```
 
-On many Pi images, membership in the `i2c` group grants access. If that group and device permission policy exist, you can run:
+On Raspberry Pi OS, the usual fix is adding your user to `i2c` and signing out/in:
 
 ```bash
 sudo usermod -aG i2c "$USER"
 ```
 
-Log out/in afterward. Do **not** `chmod 666` device nodes as a permanent workaround. For a one-off hardware diagnostic, running a command with `sudo` can help confirm a permission issue.
-
-Next: [GPIO versus I²C](gpio-vs-i2c.html).
+We will use `/dev/i2c-1` in all beginner code. Go next to [GPIO vs. I²C](gpio-vs-i2c.html).

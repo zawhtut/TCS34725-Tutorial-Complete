@@ -1,18 +1,22 @@
 ---
 layout: default
-title: Sources and Scope
-nav_order: 12
+title: "References"
+nav_order: 18
 ---
-# References and scope
 
-- [TCS3472 / TCS34725 family datasheet (PDF)](https://cdn-shop.adafruit.com/datasheets/TCS34725.pdf) — integration timing, command/register map, STATUS, saturation.
-- [Adafruit reference driver register definitions](https://github.com/adafruit/Adafruit_TCS34725/blob/master/Adafruit_TCS34725.h) — reference for addresses, family ID and gain values. This tutorial does not copy its driver code.
-- [Linux kernel I²C dev-interface documentation](https://docs.kernel.org/i2c/dev-interface.html) — `/dev/i2c-*`, `I2C_SLAVE`, and `I2C_RDWR`.
-- [GitHub Pages publishing source](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site) — how to serve `/docs/index.md`.
+# References and Further Reading
 
-## Limitations
+These links provide the technical details behind the simple examples.
 
-- C programs require a Linux machine with an accessible compatible I²C bus and correctly wired hardware.
-- I²C addresses and IDs should be verified with the specific board in hand.
-- The demo's normalization/classification examples are basic educational algorithms, not calibrated scientific color measurement.
-- This repo intentionally remains independent from the team source tree; no production signatures or implementation are asserted as final.
+- [TCS3472/TCS34725 family datasheet (ams OSRAM)](https://look.ams-osram.com/m/56f0ca23f11d867d/original/TCS3472-DS000390.pdf) — sensor registers, enable bits, gain, integration time, Clear channel, interrupt behavior. If this PDF moves, search the manufacturer for **TCS3472 datasheet**.
+- [Adafruit TCS34725 register definitions](https://github.com/adafruit/Adafruit_TCS34725/blob/master/Adafruit_TCS34725.h) — readable register values such as `ENABLE`, `ATIME`, `CONTROL`, `STATUS`, and interrupt thresholds.
+- [Linux I²C dev interface](https://docs.kernel.org/i2c/dev-interface.html) — using `/dev/i2c-*`, `ioctl()` and `I2C_RDWR` from C.
+- [Raspberry Pi documentation](https://www.raspberrypi.com/documentation/computers/configuration.html) — system configuration and interfaces.
+- [Just the Docs page ordering](https://just-the-docs.com/docs/navigation/main/order/) — how `nav_order` controls the GitHub Pages sidebar.
+
+## Notes on the tutorials
+
+- The code is a **beginner demonstration**, not a hardware-validated production driver.
+- Clear-based ratios and max-channel scaling are approximations, not accurate sRGB conversion.
+- Linux I²C device files belong to the Linux driver system. The C code does **not** manually drive SDA/SCL.
+- The optional INT pin is a separate GPIO signal. It is not needed for normal polling reads.

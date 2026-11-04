@@ -1,24 +1,41 @@
 ---
 layout: default
-title: GPIO vs I²C
+title: "GPIO vs. I²C"
 nav_order: 4
 ---
-# Why we still use I²C but not a GPIO library
 
-The TCS34725 exposes a digital **I²C** register interface, addressed at `0x29`. The Pi's 40-pin header provides SDA and SCL on GPIO 2 and GPIO 3, respectively. When configured for I²C, a **hardware controller and Linux I²C driver** handle signal timing.
+# GPIO vs. I²C
 
-Our C program opens `/dev/i2c-1` (or the correct bus), selects address `0x29`, and performs register transactions through the Linux kernel. We do **not** need to bit-bang SDA/SCL with general-purpose GPIO functions or link BCM2835.
+**Goal:** Understand why SDA and SCL are pins on the GPIO header, but our C code does not manually toggle them.
+
+## GPIO
+
+GPIO stands for *general-purpose input/output*. A program can set a GPIO pin high or low, or read whether it is high or low.
+
+## I²C
+
+I²C is a protocol for devices to exchange data over **SDA** and **SCL**. The Raspberry Pi has an I²C controller and Linux makes it available as `/dev/i2c-1`.
+
+Our C program asks Linux to transfer bytes. Linux and the I²C controller handle the electrical timing. We do **not** write code to toggle SCL ourselves.
 
 ```text
-C example / team sensor driver
-  -> Linux i2c-dev (/dev/i2c-1)
-    -> Pi I²C controller
-      -> SDA + SCL on GPIO header
-        -> TCS34725 address 0x29
+C program
+   |
+open(), ioctl(), write(), read()
+   |
+Linux I2C driver (/dev/i2c-1)
+   |
+Pi SDA (GPIO 2), SCL (GPIO 3)
+   |
+TCS34725 at address 0x29
 ```
 
-**Use GPIO only for an optional extra feature**, such as monitoring the sensor's **active-low INT output** or controlling a separate LED. Even with INT, sensor configuration and measurements still use I²C. To monitor the INT line you can use Linux GPIO tools or `libgpiod`; the latter needs `-lgpiod` only if your C program actually calls its API. This functionality is **not necessary** for the tutorial's RGBC polling code.
+## Do we need a GPIO library?
 
-See [Optional hardware interrupts](interrupts.html) for wiring, thresholds, monitoring, and build requirements.
+**No**, not for ordinary color readings. We also don't need BCM2835 or `-lgpiod` during compilation.
 
-Next: [Registers](registers.html).
+A GPIO interface becomes useful only if we later attach the sensor's optional **INT** pin to another GPIO input to receive hardware interrupts. See [Hardware Interrupts (Optional)](interrupts.html).
+
+## A related question: what is `/dev/mem`?
+
+`/dev/mem` is different from an I²C bus device. It is used for access to physical addresses, not for sending I²C bytes to a sensor. Read [**`/dev/mem` vs. `/dev/i2c`**](dev-mem-vs-i2c.html) before the first C program.

@@ -1,31 +1,36 @@
 ---
 layout: default
-title: Hardware Setup
+title: "Hardware Setup"
 nav_order: 2
 ---
-# Hardware connections
 
-**Turn off and unplug the Raspberry Pi before wiring.** Check your actual TCS34725 breakout board's pin labels and electrical specifications. The bare IC and different breakouts can have different supply/logic requirements.
+# Hardware Setup
 
-On a Raspberry Pi Zero 2 W's standard 40-pin header:
+**Goal:** Connect the TCS34725 to the Raspberry Pi using the four connections needed for I²C.
 
-| Raspberry Pi | Physical pin | Connect to breakout |
-| --- | ---: | --- |
-| GPIO 2 / SDA1 | 3 | SDA |
-| GPIO 3 / SCL1 | 5 | SCL |
-| Ground | 6 | GND |
-| 3.3 V power | 1 | **VIN/VCC only if breakout supports 3.3 V supply** |
+| Sensor breakout label | Raspberry Pi | Physical header pin |
+|---|---|---|
+| GND | GND | 6 |
+| SDA | GPIO 2 / SDA1 | 3 |
+| SCL | GPIO 3 / SCL1 | 5 |
+| VIN / VCC | Power supported by **your specific breakout board** | Commonly 3.3 V (pin 1); some breakout boards support 5 V on VIN |
 
-Use a common ground. **Never drive the Pi SDA/SCL lines at 5 V**. Boards that accept 5 V power are not automatically safe for 5 V I²C signaling; verify onboard level shifting. If unsure, choose a verified 3.3 V-compatible breakout and supply it per its documentation.
+**Power is board-specific.** The bare TCS34725 chip is not a 5 V part. Confirm whether your breakout has a voltage regulator and level shifting before connecting 5 V. Raspberry Pi GPIO signals are 3.3 V; do not drive SDA or SCL at 5 V.
 
-`INT` is optional for our polling examples. If you want an advanced interrupt exercise, see [Optional hardware interrupts](interrupts.html) for an example connection to physical pin 11 (GPIO17), 3.3 V signal requirements, and threshold setup. Do not connect INT without verifying your breakout exposes a compatible signal. Any onboard illumination LED control is breakout-specific; leave extra pins disconnected unless needed.
+## What the wires do
 
-## Checklist
+- **SDA** carries the data going between the Pi and sensor.
+- **SCL** carries the clock pulses that coordinate the transfer.
+- **GND** gives both devices the same electrical reference.
+- **Power** operates the breakout board.
 
-- [ ] Verify breakout model and voltage range.
-- [ ] Verify SDA and SCL are not swapped.
-- [ ] Verify GND is shared.
-- [ ] Use short, secure connections; turn power off before changing them.
-- [ ] Enable I²C in Linux before testing.
+## Before powering on
 
-Next: [I²C setup](i2c-setup.html).
+1. Shut down or disconnect the Pi's power before moving wires.
+2. Check the exact sensor board labels. `LED` and `INT` are not required for basic readings.
+3. Connect power and ground correctly, then SDA and SCL.
+4. Power the Pi and follow [Enable I²C](i2c-setup.html).
+
+## What about the INT pin?
+
+Leave it disconnected for the basic tutorial. It's an optional output that signals an interrupt condition, explained much later on the [Hardware Interrupts](interrupts.html) page. It is **not** needed to read colors.

@@ -1,38 +1,64 @@
 ---
 layout: default
-title: Registers and Transactions
-nav_order: 5
+title: "Sensor Registers"
+nav_order: 7
 ---
-# Registers and Linux I²C transactions
 
-## Selected registers
+# Sensor Registers
 
-| Address | Symbol | Purpose |
-| --- | --- | --- |
-| `0x00` | ENABLE | `PON` bit 0, `AEN` bit 1 |
-| `0x01` | ATIME | Integration length: `(256-ATIME) * 2.4 ms` |
-| `0x0F` | CONTROL | Gain `0=1x`, `1=4x`, `2=16x`, `3=60x` |
-| `0x12` | ID | Family identification (`0x44` typical TCS34725) |
-| `0x13` | STATUS | `AVALID` bit 0 |
-| `0x14`–`0x15` | CDATA | Clear low, high |
-| `0x16`–`0x17` | RDATA | Red low, high |
-| `0x18`–`0x19` | GDATA | Green low, high |
-| `0x1A`–`0x1B` | BDATA | Blue low, high |
+**Goal:** Understand what our program sends to the TCS34725 before reading bytes.
 
-The related family ID `0x4D` is used by TCS34723/27 variants. Our example tool **reports** any ID and warns when it is outside `0x44` / `0x4D`; verify which hardware variant is actually connected.
+A **register** is a small location inside the sensor with a specific job. Some registers control the sensor; others hold measurements.
 
-## Command bytes
+| Register address | Name | What it is for |
+|---|---|---|
+| `0x00` | ENABLE | Power on and enable RGBC measurements |
+| `0x01` | ATIME | Integration time (optional setting) |
+| `0x0F` | CONTROL | Gain (optional setting) |
+| `0x12` | ID | Device identification |
+| `0x13` | STATUS | Data ready and interrupt status |
+| `0x14`–`0x15` | Clear | Low byte, then high byte |
+| `0x16`–`0x17` | Red | Low byte, then high byte |
+| `0x18`–`0x19` | Green | Low byte, then high byte |
+| `0x1A`–`0x1B` | Blue | Low byte, then high byte |
 
-A normal register command uses `0x80 | register`. A sequential read uses `0xA0 | start_register` (auto-increment). `0xA0 | 0x14 = 0xB4` requests the 8 RGBC bytes starting at `0x14`.
+## Why do we send `0x80`?
 
-## Robust read on Linux
+The TCS34725 expects a **command byte**, not just a register number. The command bit `0x80` says that the following bits identify a register.
 
-A register read is a **write of the command byte** followed by **read of the response**. Our shared example driver uses `ioctl(fd, I2C_RDWR, ...)`, which submits the two messages as a single combined I²C transaction with repeated START. This avoids assuming a separate `write()` then `read()` will preserve the register address across a STOP condition.
+For example, the register `0x00` (ENABLE) becomes command `0x80`. To turn on power, we send these **two bytes**:
 
-Linux headers used in the sample are `<linux/i2c.h>`, `<linux/i2c-dev.h>`, `<sys/ioctl.h>`, `<fcntl.h>`, and `<unistd.h>`.
+```c
+unsigned char enable[2];
 
-For the exact implementation see `examples/tcs_i2c.c` in the GitHub repository.
+enable[0] = 0x80;  /* Command for ENABLE register 0x00 */
+enable[1] = 0x01;  /* Set PON: turn on sensor power */
 
-**Driver interface vs. device driver:** the kernel is still responsible for the physical I²C bus, and the user-space C code only implements TCS34725 commands/register handling.
+write(fd, enable, 2);
+```
 
-Next: [RGBC acquisition](rgbc-acquisition.html).
+- `fd` is the opened I²C bus from the previous lesson.
+- `enable` is an array holding the two bytes we send.
+- `2` means send two bytes.
+
+After the oscillator starts, the sensor needs ENABLE value `0x03`: `0x01` (power on) + `0x02` (RGBC measurement enable).
+
+## Why `0xB4` when reading RGBC?
+
+`0xB4` is the command byte for starting at register `0x14` and reading consecutive registers:
+
+```text
+0x80  command bit
+0x20  automatically move to the next register
+0x14  first RGBC register (Clear low byte)
+-----
+0xB4  complete command
+```
+
+Writing `command = 0xB4;` is fine in the first example, **as long as we understand those parts**. The eight bytes will contain Clear, Red, Green, and Blue.
+
+## Hexadecimal numbers
+
+Numbers beginning with `0x` are hexadecimal (base 16). `0x29` is the device address, not the number 29 in decimal.
+
+Learn the complete read sequence next: [Read Raw RGBC](rgbc-acquisition.html).
